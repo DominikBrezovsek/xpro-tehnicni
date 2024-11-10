@@ -1,0 +1,6 @@
+@xproAPI_HostAddress = http://localhost:5064
+
+GET {{xproAPI_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
