@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("xproAPI")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+4a6fee2545e1f6b5c1c41c4167d1efec693d2137")]
 [assembly: System.Reflection.AssemblyProductAttribute("xproAPI")]
 [assembly: System.Reflection.AssemblyTitleAttribute("xproAPI")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

@@ -15,4 +15,5 @@ public class User
     public string? ProfileImage { get; set; }
     public bool Active { get; set; }
     
+    public ICollection<WorkTime> WorkTimes { get; } = new List<WorkTime>();
 }

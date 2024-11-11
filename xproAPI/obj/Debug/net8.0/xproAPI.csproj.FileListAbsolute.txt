@@ -236,3 +236,4 @@
 /Users/dominikbrezovsek/Developer/xpro/xproAPI/xproAPI/bin/Debug/net8.0/runtimes/win/lib/net7.0/System.Drawing.Common.dll
 /Users/dominikbrezovsek/Developer/xpro/xproAPI/xproAPI/bin/Debug/net8.0/runtimes/win/lib/net7.0/System.Security.Cryptography.ProtectedData.dll
 /Users/dominikbrezovsek/Developer/xpro/xproAPI/xproAPI/bin/Debug/net8.0/runtimes/win/lib/net7.0/System.Windows.Extensions.dll
+/Users/dominikbrezovsek/Developer/xpro/xproAPI/xproAPI/obj/Debug/net8.0/xproAPI.sourcelink.json
