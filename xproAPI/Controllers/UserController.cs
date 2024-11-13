@@ -4,7 +4,10 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using xproAPI.Models;
 using BCrypt.Net;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Newtonsoft.Json;
+using NuGet.Common;
 using NuGet.Protocol;
 
 namespace xproAPI.Controllers;
@@ -21,7 +24,7 @@ public class UserController : ControllerBase
     }
 
     // Get all users 
-    [HttpGet]
+    [HttpGet, Authorize]
     public async Task<ActionResult<IEnumerable<User>>> GetUsers()
     {
         if (_dataBaseContext.Users == null) return NotFound();
@@ -30,11 +33,11 @@ public class UserController : ControllerBase
     }
 
     // Get one user
-    [HttpGet("{Id:long}")]
-    public async Task<ActionResult<User>> GetUser(long Id)
+    [HttpPost("GetUser/")]
+    public async Task<ActionResult<User>> GetUser([FromForm] long id)
     {
         if (_dataBaseContext.Users == null) return NotFound();
-        var user = await _dataBaseContext.Users.FindAsync(Id);
+        var user = await _dataBaseContext.Users.FindAsync(id);
         if (user == null) return NotFound();
         return user;
     }
@@ -43,7 +46,7 @@ public class UserController : ControllerBase
     public async Task<ActionResult<User>> PostUser([FromForm] string name, [FromForm] string surname,
         [FromForm] string email, [FromForm] string phone, [FromForm] string position, [FromForm] string empType,
         [FromForm] string username, [FromForm] string password, [FromForm] string empNote = "",
-        [FromForm] string profileImage = "")
+        [FromForm] string profileImage = "", [FromForm] string role="user")
     {
         
         
@@ -54,6 +57,7 @@ public class UserController : ControllerBase
             Email = email,
             Phone = phone,
             Position = position,
+            Role = role,
             EmploymentType = empType,
             OtherEmploymentType = empNote,
             Username = username,
@@ -128,6 +132,13 @@ public class UserController : ControllerBase
             string json = JsonConvert.SerializeObject(error);
             return Ok(json);
         }
-        return Ok(user);
+
+        var token = TokenController.CreateToken(user.Role);
+        var response = new
+        {
+            id = user.Id,
+            token = token
+        };
+        return Ok(response);
     }
 }
