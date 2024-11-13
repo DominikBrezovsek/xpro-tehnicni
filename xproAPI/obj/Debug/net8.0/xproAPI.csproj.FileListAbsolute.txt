@@ -128,7 +128,6 @@
 /Users/dominikbrezovsek/Developer/xpro/xproAPI/xproAPI/bin/Debug/net8.0/Microsoft.VisualStudio.Web.CodeGeneration.Templating.dll
 /Users/dominikbrezovsek/Developer/xpro/xproAPI/xproAPI/bin/Debug/net8.0/Microsoft.VisualStudio.Web.CodeGeneration.Utils.dll
 /Users/dominikbrezovsek/Developer/xpro/xproAPI/xproAPI/bin/Debug/net8.0/Microsoft.VisualStudio.Web.CodeGenerators.Mvc.dll
-/Users/dominikbrezovsek/Developer/xpro/xproAPI/xproAPI/bin/Debug/net8.0/Microsoft.Win32.SystemEvents.dll
 /Users/dominikbrezovsek/Developer/xpro/xproAPI/xproAPI/bin/Debug/net8.0/Newtonsoft.Json.dll
 /Users/dominikbrezovsek/Developer/xpro/xproAPI/xproAPI/bin/Debug/net8.0/NuGet.Common.dll
 /Users/dominikbrezovsek/Developer/xpro/xproAPI/xproAPI/bin/Debug/net8.0/NuGet.Configuration.dll
@@ -140,11 +139,8 @@
 /Users/dominikbrezovsek/Developer/xpro/xproAPI/xproAPI/bin/Debug/net8.0/NuGet.Protocol.dll
 /Users/dominikbrezovsek/Developer/xpro/xproAPI/xproAPI/bin/Debug/net8.0/NuGet.Versioning.dll
 /Users/dominikbrezovsek/Developer/xpro/xproAPI/xproAPI/bin/Debug/net8.0/System.Configuration.ConfigurationManager.dll
-/Users/dominikbrezovsek/Developer/xpro/xproAPI/xproAPI/bin/Debug/net8.0/System.Drawing.Common.dll
 /Users/dominikbrezovsek/Developer/xpro/xproAPI/xproAPI/bin/Debug/net8.0/System.Reflection.MetadataLoadContext.dll
 /Users/dominikbrezovsek/Developer/xpro/xproAPI/xproAPI/bin/Debug/net8.0/System.Security.Cryptography.ProtectedData.dll
-/Users/dominikbrezovsek/Developer/xpro/xproAPI/xproAPI/bin/Debug/net8.0/System.Security.Permissions.dll
-/Users/dominikbrezovsek/Developer/xpro/xproAPI/xproAPI/bin/Debug/net8.0/System.Windows.Extensions.dll
 /Users/dominikbrezovsek/Developer/xpro/xproAPI/xproAPI/bin/Debug/net8.0/af/Humanizer.resources.dll
 /Users/dominikbrezovsek/Developer/xpro/xproAPI/xproAPI/bin/Debug/net8.0/ar/Humanizer.resources.dll
 /Users/dominikbrezovsek/Developer/xpro/xproAPI/xproAPI/bin/Debug/net8.0/az/Humanizer.resources.dll
@@ -232,8 +228,10 @@
 /Users/dominikbrezovsek/Developer/xpro/xproAPI/xproAPI/bin/Debug/net8.0/tr/Microsoft.CodeAnalysis.Scripting.resources.dll
 /Users/dominikbrezovsek/Developer/xpro/xproAPI/xproAPI/bin/Debug/net8.0/zh-Hans/Microsoft.CodeAnalysis.Scripting.resources.dll
 /Users/dominikbrezovsek/Developer/xpro/xproAPI/xproAPI/bin/Debug/net8.0/zh-Hant/Microsoft.CodeAnalysis.Scripting.resources.dll
-/Users/dominikbrezovsek/Developer/xpro/xproAPI/xproAPI/bin/Debug/net8.0/runtimes/win/lib/net7.0/Microsoft.Win32.SystemEvents.dll
-/Users/dominikbrezovsek/Developer/xpro/xproAPI/xproAPI/bin/Debug/net8.0/runtimes/win/lib/net7.0/System.Drawing.Common.dll
-/Users/dominikbrezovsek/Developer/xpro/xproAPI/xproAPI/bin/Debug/net8.0/runtimes/win/lib/net7.0/System.Security.Cryptography.ProtectedData.dll
-/Users/dominikbrezovsek/Developer/xpro/xproAPI/xproAPI/bin/Debug/net8.0/runtimes/win/lib/net7.0/System.Windows.Extensions.dll
 /Users/dominikbrezovsek/Developer/xpro/xproAPI/xproAPI/obj/Debug/net8.0/xproAPI.sourcelink.json
+/Users/dominikbrezovsek/Developer/xpro/xproAPI/xproAPI/bin/Debug/net8.0/BCrypt.Net-Next.dll
+/Users/dominikbrezovsek/Developer/xpro/xproAPI/xproAPI/bin/Debug/net8.0/System.Formats.Asn1.dll
+/Users/dominikbrezovsek/Developer/xpro/xproAPI/xproAPI/bin/Debug/net8.0/System.IO.Pipelines.dll
+/Users/dominikbrezovsek/Developer/xpro/xproAPI/xproAPI/bin/Debug/net8.0/System.Text.Encodings.Web.dll
+/Users/dominikbrezovsek/Developer/xpro/xproAPI/xproAPI/bin/Debug/net8.0/System.Text.Json.dll
+/Users/dominikbrezovsek/Developer/xpro/xproAPI/xproAPI/bin/Debug/net8.0/runtimes/browser/lib/net8.0/System.Text.Encodings.Web.dll

@@ -1,6 +1,11 @@
+using System.Runtime.InteropServices.JavaScript;
+using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using xproAPI.Models;
+using BCrypt.Net;
+using Newtonsoft.Json;
+using NuGet.Protocol;
 
 namespace xproAPI.Controllers;
 
@@ -35,8 +40,31 @@ public class UserController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<User>> PostUser(User user)
+    public async Task<ActionResult<User>> PostUser([FromForm] string name, [FromForm] string surname,
+        [FromForm] string email, [FromForm] string phone, [FromForm] string position, [FromForm] string empType,
+        [FromForm] string username, [FromForm] string password, [FromForm] string empNote = "",
+        [FromForm] string profileImage = "")
     {
+        
+        
+        User user = new User()
+        {
+            Name = name,
+            Surname = surname,
+            Email = email,
+            Phone = phone,
+            Position = position,
+            EmploymentType = empType,
+            OtherEmploymentType = empNote,
+            Username = username,
+            Password = BCrypt.Net.BCrypt.EnhancedHashPassword(password),
+            Active = true,
+            
+        };
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
         _dataBaseContext.Users.Add(user);
         await _dataBaseContext.SaveChangesAsync();
         return CreatedAtAction(nameof(GetUser), new { user.Id }, user);
@@ -74,5 +102,32 @@ public class UserController : ControllerBase
         _dataBaseContext.Users.Remove(user);
         await _dataBaseContext.SaveChangesAsync();
         return Ok();
+    }
+
+    [HttpPost("login/")]
+    public async Task<ActionResult<User>> Login([FromForm] string username, [FromForm] string password)
+    {
+        var userExists = _dataBaseContext.Users.Any(w => w.Username == username);
+        if (!userExists)
+        {
+            var error = new
+            {
+                error = "username"
+            };
+            string json = JsonConvert.SerializeObject(error);
+            return Ok(json);
+        }
+        var user  = await _dataBaseContext.Users.Where(w => w.Username == username).FirstAsync();
+        var isPassValid = BCrypt.Net.BCrypt.EnhancedVerify(password, user.Password);
+        if (!isPassValid)
+        {
+            var error = new
+            {
+                error = "password"
+            };
+            string json = JsonConvert.SerializeObject(error);
+            return Ok(json);
+        }
+        return Ok(user);
     }
 }
