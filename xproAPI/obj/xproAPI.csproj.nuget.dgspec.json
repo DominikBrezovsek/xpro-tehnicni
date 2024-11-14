@@ -13,6 +13,7 @@
         "packagesPath": "/Users/dominikbrezovsek/.nuget/packages/",
         "outputPath": "/Users/dominikbrezovsek/Developer/xprotehnicniapi/xpro-tehnicni/xproAPI/obj/",
         "projectStyle": "PackageReference",
+        "UsingMicrosoftNETSdk": false,
         "configFilePaths": [
           "/Users/dominikbrezovsek/.nuget/NuGet/NuGet.Config"
         ],
