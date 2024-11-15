@@ -1,7 +1,9 @@
 using Humanizer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using xproAPI.Models;
 
 namespace xproAPI.Controllers
@@ -16,8 +18,9 @@ namespace xproAPI.Controllers
         {
             _workTimeContext = workTimeContext;
         }
-        [HttpGet("{userId:long}")]
-        public async Task<ActionResult<IEnumerable<WorkTime>>> GetWorkTimes(long userId)
+        [HttpPost("getWorkTime/")]
+        [Authorize]
+        public async Task<ActionResult<WorkTime>> GetWorkTimes([FromForm] long userId)
         {
             if (_workTimeContext == null)
             {
@@ -28,26 +31,39 @@ namespace xproAPI.Controllers
             {
                 return NotFound();
             }
-            return await _workTimeContext.WorkTimes.Where(x => x.UserId == userId).ToArrayAsync();
+            return await _workTimeContext.WorkTimes.Where(x => x.UserId == userId)
+                .Where(w => w.Date == DateOnly.FromDateTime(DateTime.Now))
+                .FirstAsync();
         }
 
-        [HttpPost("startWork/{userId:long}", Name = "StartWork")]
-        public async Task<ActionResult<WorkTime>> StartWork(long userId, [FromBody] DateTime startTime)
+        [HttpPost("startWork/")]
+        [Authorize]
+        public async Task<ActionResult<WorkTime>> StartWork([FromForm] long userId, [FromForm] string startTime)
         {
             if (_workTimeContext == null)
             {
                 return NotFound();
             }
+
+            if (UserHasWorkTime(userId))
+            {
+                var message = new
+                {
+                    hasWorkTime = "true"
+                };
+                var json = JsonConvert.SerializeObject(message);
+                return Ok(json);
+            };
             var allowedBreakDuration = await _workTimeContext.BreakDurations.Where(w => w.Valid == true).FirstAsync();
             Console.Out.WriteLine("Start date is" + DateOnly.FromDateTime(DateTime.UtcNow));
-            var startTimeUtc = startTime.ToUniversalTime();
-            Console.Out.WriteLine(startTimeUtc);
+            var time = DateTime.Parse(startTime);
+            Console.Out.WriteLine(time);
             var workTime = new WorkTime
             {
                 UserId = userId,
                 Date = DateOnly.FromDateTime(DateTime.UtcNow),
-                ClockIn = TimeOnly.FromDateTime(startTimeUtc),
-                TimeZone = TimeZoneInfo.Local.GetUtcOffset(startTime.ToUniversalTime()).Hours.ToString("00"),
+                ClockIn = TimeOnly.FromDateTime(time),
+                TimeZone = TimeZoneInfo.Local.GetUtcOffset(time.ToUniversalTime()).Hours.ToString("00"),
                 BreakDurationId = allowedBreakDuration.Id,
             };
             _workTimeContext.WorkTimes.Add(workTime);
@@ -60,8 +76,8 @@ namespace xproAPI.Controllers
             return _workTimeContext.WorkTimes.Any(u => u.UserId == userId);
         }
 
-        [HttpPost("endWork/{userId:long}", Name = "EndWork")]
-        public async Task<ActionResult<WorkTime>> EndWork(long userId, [FromBody] DateTime clockOutTime)
+        [HttpPost("endWork/"), Authorize]
+        public async Task<ActionResult<WorkTime>> EndWork([FromForm] long userId, [FromForm] string endTime)
         {
             if (_workTimeContext == null)
             {
@@ -71,13 +87,14 @@ namespace xproAPI.Controllers
             {
                 return NotFound();
             }
+            var clockOutTimeDt = DateTime.Parse(endTime);
             await _workTimeContext.WorkTimes
                 .Where(w => w.UserId == userId)
                 .Where(w => w.ClockOut == null)
-                .ExecuteUpdateAsync(update => update.SetProperty(u => u.ClockOut, TimeOnly.FromDateTime(clockOutTime.ToUniversalTime())));
+                .ExecuteUpdateAsync(update => update.SetProperty(u => u.ClockOut, TimeOnly.FromDateTime(clockOutTimeDt)));
             
              TimeOnly clockIn = (_workTimeContext.WorkTimes.Where(w => w.UserId == userId).Select(u => u.ClockIn).First());
-             TimeOnly clockOut = TimeOnly.FromDateTime(clockOutTime.ToUniversalTime());
+             TimeOnly clockOut = TimeOnly.FromDateTime(clockOutTimeDt);
              TimeSpan totalTime = (clockOut - clockIn);
              string totalTimeString = totalTime.ToString("hh\\:mm\\:ss");
              Console.WriteLine(totalTimeString);
@@ -87,28 +104,21 @@ namespace xproAPI.Controllers
                  .ExecuteUpdateAsync(update => update.SetProperty(u => u.TotalWorkTime, totalTimeString ));
             return Ok(totalTime);
         }
-
-        [HttpPost("/startBreak/{userId:long}")]
-        public async Task<ActionResult<WorkTime>> StartBreak(long userId, [FromBody] DateTime startTime)
-        {
-            if (!UserHasWorkTime(userId))
-            {
-                return NotFound();
-            }
-            await _workTimeContext.WorkTimes.Where(w => w.UserId == userId)
-                .Where(w => w.BreakStart == null)
-                .Where(w => w.Date == DateOnly.FromDateTime(DateTime.Now))
-                .ExecuteUpdateAsync(update => update.SetProperty(u => u.BreakStart, TimeOnly.FromDateTime(startTime.ToUniversalTime())));
-            return Ok($"Break started at {TimeOnly.FromDateTime(startTime).ToString()}");
-        }
         
-        [HttpPost("/endBreak/{userId:long}")]
-        public async Task<ActionResult<WorkTime>> EndBreak(long userId, [FromBody] DateTime endTime)
+        [HttpPost("addBreak/")]
+        public async Task<ActionResult<WorkTime>> EndBreak([FromForm]long userId, [FromForm] string startTime, [FromForm] string endTime)
         {
             if (!UserHasWorkTime(userId))
             {
                 return NotFound();
             } 
+            var startTimeDt = DateTime.Parse(startTime);
+            var endTimeDt = DateTime.Parse(endTime);
+            await _workTimeContext.WorkTimes.Where(w => w.UserId == userId)
+                .Where(w => w.BreakStart == null)
+                .Where(w => w.Date == DateOnly.FromDateTime(DateTime.Now))
+                .ExecuteUpdateAsync(update => update.SetProperty(u => u.BreakStart, TimeOnly.FromDateTime(startTimeDt)));
+            
             var currentBreak = await _workTimeContext.WorkTimes.Where(w => w.UserId == userId)
                 .Where(w => w.BreakEnd == null)
                 .Where(w => w.Date == DateOnly.FromDateTime(DateTime.Now))
@@ -116,12 +126,12 @@ namespace xproAPI.Controllers
             var allowedBreakDuration = _workTimeContext.BreakDurations.Where(w => w.Valid == true).Select(s => s.Duration).First();
             await _workTimeContext.WorkTimes.Where(w => w.UserId == userId)
                 .Where(w => w.Id == currentBreak.Id)
-                .ExecuteUpdateAsync(update => update.SetProperty(u => u.BreakEnd, TimeOnly.FromDateTime(endTime.ToUniversalTime())));
+                .ExecuteUpdateAsync(update => update.SetProperty(u => u.BreakEnd, TimeOnly.FromDateTime(endTimeDt)));
             var breakStartedAt = _workTimeContext.WorkTimes.Where(w => w.UserId == userId)
                 .Where(w => w.Id == currentBreak.Id)
                 .Select(w => w.BreakStart).First();
             var breakStart = TimeOnly.Parse(breakStartedAt.ToString());
-            var breakDuration = (TimeOnly.FromDateTime(endTime) - breakStart);
+            var breakDuration = (TimeOnly.FromDateTime(endTimeDt) - breakStart);
             await _workTimeContext.WorkTimes.Where(w => w.UserId == userId)
                 .Where(w => w.Id == currentBreak.Id)
                 .ExecuteUpdateAsync(update => update.SetProperty(u => u.BreakDuration, TimeOnly.FromTimeSpan(breakDuration)));
@@ -134,7 +144,7 @@ namespace xproAPI.Controllers
                     .Where(w => w.Id == currentBreak.Id)
                     .ExecuteUpdateAsync(update => update.SetProperty(u => u.BreakOverAllowedTime, TimeOnly.FromTimeSpan(exceededBreakDuration)));
             }
-            return Ok($"Break ended at {TimeOnly.FromDateTime(endTime).ToString()}");
+            return Ok();
         }
     }
 }

@@ -1,18 +1,19 @@
 {
   "format": 1,
   "restore": {
-    "/Users/dominikbrezovsek/Developer/xpro/xproAPI/xproAPI/xproAPI.csproj": {}
+    "/Users/dominikbrezovsek/Developer/xprotehnicniapi/xpro-tehnicni/xproAPI/xproAPI.csproj": {}
   },
   "projects": {
-    "/Users/dominikbrezovsek/Developer/xpro/xproAPI/xproAPI/xproAPI.csproj": {
+    "/Users/dominikbrezovsek/Developer/xprotehnicniapi/xpro-tehnicni/xproAPI/xproAPI.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/Users/dominikbrezovsek/Developer/xpro/xproAPI/xproAPI/xproAPI.csproj",
+        "projectUniqueName": "/Users/dominikbrezovsek/Developer/xprotehnicniapi/xpro-tehnicni/xproAPI/xproAPI.csproj",
         "projectName": "xproAPI",
-        "projectPath": "/Users/dominikbrezovsek/Developer/xpro/xproAPI/xproAPI/xproAPI.csproj",
+        "projectPath": "/Users/dominikbrezovsek/Developer/xprotehnicniapi/xpro-tehnicni/xproAPI/xproAPI.csproj",
         "packagesPath": "/Users/dominikbrezovsek/.nuget/packages/",
-        "outputPath": "/Users/dominikbrezovsek/Developer/xpro/xproAPI/xproAPI/obj/",
+        "outputPath": "/Users/dominikbrezovsek/Developer/xprotehnicniapi/xpro-tehnicni/xproAPI/obj/",
         "projectStyle": "PackageReference",
+        "UsingMicrosoftNETSdk": false,
         "configFilePaths": [
           "/Users/dominikbrezovsek/.nuget/NuGet/NuGet.Config"
         ],
@@ -46,6 +47,10 @@
             "BCrypt.Net-Next": {
               "target": "Package",
               "version": "[4.0.3, )"
+            },
+            "Microsoft.AspNetCore.Authentication.JwtBearer": {
+              "target": "Package",
+              "version": "[8.0.11, )"
             },
             "Microsoft.EntityFrameworkCore": {
               "target": "Package",

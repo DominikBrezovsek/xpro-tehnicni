@@ -8,6 +8,7 @@ public class User
     public string Email { get; set; }
     public string Phone { get; set; }
     public string Position { get; set; }
+    public string Role { get; set; }
     public string EmploymentType { get; set; }
     public string? OtherEmploymentType { get; set; }
     public string Username { get; set; }
