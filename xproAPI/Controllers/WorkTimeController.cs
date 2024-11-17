@@ -24,12 +24,20 @@ namespace xproAPI.Controllers
         {
             if (_workTimeContext == null)
             {
-                return NotFound();
+                var message = new  {
+                    hasWorkTime = "false",
+                };
+                var json = JsonConvert.SerializeObject(message);
+                return Ok(json);
             }
 
             if (!UserHasWorkTime(userId))
             {
-                return NotFound();
+                var message = new  {
+                    hasWorkTime = "false",
+                };
+                var json = JsonConvert.SerializeObject(message);
+                return Ok(json);
             }
             var currentDate = DateTime.Now;
             var entry = await _workTimeContext.WorkTimes.Where(w => w.UserId == userId)
@@ -91,7 +99,7 @@ namespace xproAPI.Controllers
             }
 
             var clockOutTimeDt = DateTime.Parse(endTime);
-            TimeOnly clockIn = (_workTimeContext.WorkTimes.Where(w => w.Id == workId).Select(u => u.ClockIn).First());
+            var clockIn = (_workTimeContext.WorkTimes.Where(w => w.Id == workId).Select(u => u.ClockIn).First());
             if (TimeOnly.FromDateTime(clockOutTimeDt) < clockIn)
             {
                 var error = new
@@ -101,18 +109,23 @@ namespace xproAPI.Controllers
                 var json = JsonConvert.SerializeObject(error);
                 return Ok(json);
             }
-            
+
             await _workTimeContext.WorkTimes
                 .Where(w => w.Id == workId)
-                .ExecuteUpdateAsync(update => update.SetProperty(u => u.ClockOut, TimeOnly.FromDateTime(clockOutTimeDt)));
-            
-             TimeOnly clockOut = TimeOnly.FromDateTime(clockOutTimeDt);
-             TimeSpan totalTime = (clockOut - clockIn);
-             string totalTimeString = totalTime.ToString("hh\\:mm\\:ss");
-             Console.WriteLine(totalTimeString);
-             await _workTimeContext.WorkTimes.Where(w => w.Id == workId)
-                 .ExecuteUpdateAsync(update => update.SetProperty(u => u.TotalWorkTime, totalTimeString ));
-            return Ok(totalTime);
+                .ExecuteUpdateAsync(
+                    update => update.SetProperty(u => u.ClockOut, TimeOnly.FromDateTime(clockOutTimeDt)));
+            TimeSpan totalTime;
+            TimeOnly clockOut = TimeOnly.FromDateTime(clockOutTimeDt);
+            if (clockIn.HasValue && clockIn != null)
+            {
+                totalTime = (TimeSpan)(clockIn - clockIn);
+
+                await _workTimeContext.WorkTimes.Where(w => w.Id == workId)
+                    .ExecuteUpdateAsync(update =>
+                        update.SetProperty(u => u.TotalWorkTime, totalTime.ToString("hh\\:mm\\:ss")));
+                return Ok(totalTime);
+            }
+            return Ok("Napaka pri totalTime");
         }
         
         [HttpPost("addBreak/")]
@@ -182,9 +195,87 @@ namespace xproAPI.Controllers
 
         [HttpPost("getUserWorkTimes/")]
         [Authorize]
-        public async Task<ActionResult<IEnumerable<WorkTime>>> GetUserWorkTimes([FromForm] long userId)
+        public async Task<ActionResult<IEnumerable<WorkTime>>> GetUserWorkTimes([FromForm] long userId, [FromForm] string? month)
         {
-            return await _workTimeContext.WorkTimes.Where(w => w.UserId == userId).ToListAsync();
+            int searchMonth = 0;
+            if (month == null)
+            {
+                searchMonth = DateTime.Now.Month;
+            }
+            else
+            {
+                searchMonth = DateTime.Parse(month).Month;
+            }
+            return await _workTimeContext.WorkTimes.Where(w => w.UserId == userId).Where(w => w.Date.Month == searchMonth ).OrderBy(o => o.Date).ToListAsync();
+        }
+        [HttpPost("updateUserWorkTimes/")]
+        [Authorize]
+        public async Task<ActionResult<IEnumerable<WorkTime>>> UpdateUserWorkTimes([FromForm] long workId, [FromForm] string clockInTime, [FromForm] string clockOutTime,
+            [FromForm] string breakStartTime, [FromForm] string breakEndTime)
+        {
+            var newClockIn = DateTime.Parse(clockInTime);
+            var newClockOut = DateTime.Parse(clockOutTime);
+            var newBreakStart = DateTime.Parse(breakStartTime);
+            var newBreakEnd = DateTime.Parse(breakEndTime);
+            var newBreakDuration = (newBreakEnd - newBreakStart);
+            var newTotalWorkTime = (newClockOut - newClockIn);
+            var allowedBreakDuration = await _workTimeContext.BreakDurations.Where(w => w.Valid == true).Select(s => s.Duration).FirstAsync();
+            await _workTimeContext.WorkTimes.Where(w => w.Id == workId)
+                .ExecuteUpdateAsync(update => update.SetProperty(u => u.ClockIn, TimeOnly.FromDateTime(newClockIn))
+                .SetProperty(u => u.ClockOut, TimeOnly.FromDateTime(newClockOut))
+                .SetProperty(u => u.BreakStart, TimeOnly.FromDateTime(newBreakStart))
+                .SetProperty(u => u.BreakEnd, TimeOnly.FromDateTime(newBreakEnd)));
+            if (newBreakDuration > TimeSpan.FromMinutes(allowedBreakDuration))
+            {
+                var exceededBreakDuration = newBreakDuration - TimeSpan.FromMinutes(allowedBreakDuration);
+                await _workTimeContext.WorkTimes.Where(w => w.Id == workId)
+                    .ExecuteUpdateAsync(update =>
+                        update.SetProperty(u => u.BreakOverAllowedTime, TimeOnly.FromTimeSpan(exceededBreakDuration)));
+            }
+            else
+            {
+                await _workTimeContext.WorkTimes.Where(w => w.Id == workId)
+                    .ExecuteUpdateAsync(update => update.SetProperty(u => u.BreakOverAllowedTime, TimeOnly.FromTimeSpan(TimeSpan.FromMinutes(0))));
+            }
+            await _workTimeContext.WorkTimes.Where(w => w.Id == workId)
+                .ExecuteUpdateAsync(update => update.SetProperty(u => u.BreakDuration, TimeOnly.FromTimeSpan(newBreakDuration))
+                    .SetProperty(u => u.TotalWorkTime, TimeOnly.FromTimeSpan(newTotalWorkTime).ToString("hh\\:mm\\:ss")));
+            
+            return Ok();
+        }
+
+        [HttpPost("addAbsence/")]
+        [Authorize]
+        public async Task<ActionResult<IEnumerable<WorkTime>>> AddUserAbsence([FromForm] long userId,
+            [FromForm] long absenceId)
+        {
+            var today = DateTime.Now;
+            var date = DateOnly.FromDateTime(today);
+            var userIsAlreadyWorking = await _workTimeContext.WorkTimes.Where(w => w.UserId == userId)
+                .AnyAsync(a => a.Date == date);
+            if (userIsAlreadyWorking)
+            {
+                var message = new
+                {
+                    error = "alreadyWorking",
+                };
+                var json = JsonConvert.SerializeObject(message);
+                return Ok(json);
+            }
+            var allowedBreakId = await _workTimeContext.BreakDurations.Where(w => w.Valid == true).Select(s => s.Id).FirstAsync();
+            var worktime = new WorkTime()
+            {
+                UserId = userId,
+                Date = date,
+                Absent = true,
+                AbsentType = absenceId,
+                BreakDurationId = allowedBreakId,
+                ClockIn = null,
+            };
+            await _workTimeContext.WorkTimes.AddAsync(worktime);
+            await _workTimeContext.SaveChangesAsync();
+            return Ok();
+
         }
     }
 }

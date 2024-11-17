@@ -6,7 +6,7 @@ public class WorkTime
     public long UserId { get; set; }
     public long BreakDurationId { get; set; }
     public DateOnly Date { get; set; }
-    public TimeOnly ClockIn { get; set; }
+    public TimeOnly? ClockIn { get; set; }
     public TimeOnly? ClockOut { get; set; }
     public String? TimeZone { get; set; }
     public string? TotalWorkTime { get; set; }

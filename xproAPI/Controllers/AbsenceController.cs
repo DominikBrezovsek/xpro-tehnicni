@@ -16,7 +16,13 @@ namespace xproAPI.Controllers
             _dataBaseContext = dataBaseContext;
         }
 
-        [HttpPost("Create")]
+        [HttpGet("getAbsences/")]
+        public async Task<ActionResult<IEnumerable<Absence>>> GetAbsences()
+        {
+            return await _dataBaseContext.Absences.ToListAsync();
+        }
+
+    [HttpPost("Create")]
         public async Task<ActionResult<Absence>> Create([FromBody] Absence absence)
         {
             _dataBaseContext.Absences.Add(absence);
