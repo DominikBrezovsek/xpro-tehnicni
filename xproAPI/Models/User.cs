@@ -13,7 +13,7 @@ public class User
     public string? OtherEmploymentType { get; set; }
     public string Username { get; set; }
     public string Password { get; set; }
-    public string? ProfileImage { get; set; }
+    public Byte[]? ProfileImage { get; set; }
     public bool Active { get; set; }
     
     public ICollection<WorkTime> WorkTimes { get; } = new List<WorkTime>();

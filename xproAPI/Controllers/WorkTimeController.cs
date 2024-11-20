@@ -213,34 +213,93 @@ namespace xproAPI.Controllers
         public async Task<ActionResult<IEnumerable<WorkTime>>> UpdateUserWorkTimes([FromForm] long workId, [FromForm] string clockInTime, [FromForm] string clockOutTime,
             [FromForm] string breakStartTime, [FromForm] string breakEndTime)
         {
-            var newClockIn = DateTime.Parse(clockInTime);
-            var newClockOut = DateTime.Parse(clockOutTime);
-            var newBreakStart = DateTime.Parse(breakStartTime);
-            var newBreakEnd = DateTime.Parse(breakEndTime);
-            var newBreakDuration = (newBreakEnd - newBreakStart);
-            var newTotalWorkTime = (newClockOut - newClockIn);
-            var allowedBreakDuration = await _workTimeContext.BreakDurations.Where(w => w.Valid == true).Select(s => s.Duration).FirstAsync();
-            await _workTimeContext.WorkTimes.Where(w => w.Id == workId)
-                .ExecuteUpdateAsync(update => update.SetProperty(u => u.ClockIn, TimeOnly.FromDateTime(newClockIn))
-                .SetProperty(u => u.ClockOut, TimeOnly.FromDateTime(newClockOut))
-                .SetProperty(u => u.BreakStart, TimeOnly.FromDateTime(newBreakStart))
-                .SetProperty(u => u.BreakEnd, TimeOnly.FromDateTime(newBreakEnd)));
-            if (newBreakDuration > TimeSpan.FromMinutes(allowedBreakDuration))
+            var wasAbsent = await _workTimeContext.WorkTimes.Where(w => w.Id == workId).AnyAsync(a => a.Absent == true);
+            if (wasAbsent)
             {
-                var exceededBreakDuration = newBreakDuration - TimeSpan.FromMinutes(allowedBreakDuration);
+                return Ok(new { error = "userWasAbsent" });
+            }
+            if (clockInTime == "/")
+            {
                 await _workTimeContext.WorkTimes.Where(w => w.Id == workId)
-                    .ExecuteUpdateAsync(update =>
-                        update.SetProperty(u => u.BreakOverAllowedTime, TimeOnly.FromTimeSpan(exceededBreakDuration)));
+                    .ExecuteUpdateAsync(update => update.SetProperty(u => u.ClockIn, (TimeOnly?)(null)));
+            }
+            else
+            {
+                var newClockIn = DateTime.Parse(clockInTime);
+                await _workTimeContext.WorkTimes.Where(w => w.Id == workId)
+                    .ExecuteUpdateAsync(update => update.SetProperty(u => u.ClockIn, TimeOnly.FromDateTime(newClockIn)));
+            }
+            if (clockOutTime == "/")
+            {
+                await _workTimeContext.WorkTimes.Where(w => w.Id == workId)
+                    .ExecuteUpdateAsync(update => update.SetProperty(u => u.ClockOut, (TimeOnly?)(null)));
+            }
+            else
+            {
+                var newClockOut = DateTime.Parse(clockOutTime);
+                await _workTimeContext.WorkTimes.Where(w => w.Id == workId)
+                    .ExecuteUpdateAsync(update => update.SetProperty(u => u.ClockOut, TimeOnly.FromDateTime(newClockOut)));
+            }
+            if (breakStartTime == "/")
+            {
+                await _workTimeContext.WorkTimes.Where(w => w.Id == workId)
+                    .ExecuteUpdateAsync(update => update.SetProperty(u => u.BreakStart, (TimeOnly?)(null)));
+            }
+            else
+            {
+                var newBreakStart = DateTime.Parse(breakStartTime);
+                await _workTimeContext.WorkTimes.Where(w => w.Id == workId)
+                    .ExecuteUpdateAsync(update => update.SetProperty(u => u.BreakStart, TimeOnly.FromDateTime(newBreakStart)));
+            }
+            if (breakEndTime == "/")
+            {
+                await _workTimeContext.WorkTimes.Where(w => w.Id == workId)
+                    .ExecuteUpdateAsync(update => update.SetProperty(u => u.BreakEnd, (TimeOnly?)(null)));
+            }
+            else
+            {
+                var newBreakEnd = DateTime.Parse(breakEndTime);
+                await _workTimeContext.WorkTimes.Where(w => w.Id == workId)
+                    .ExecuteUpdateAsync(update => update.SetProperty(u => u.BreakEnd, TimeOnly.FromDateTime(newBreakEnd)));
+            }
+            if (breakStartTime != "/" && breakEndTime != "/")
+            {
+                var newBreakDuration = (DateTime.Parse(breakEndTime) - DateTime.Parse(breakStartTime));
+                await _workTimeContext.WorkTimes.Where(w => w.Id == workId)
+                    .ExecuteUpdateAsync(update => update.SetProperty(u => u.BreakDuration, TimeOnly.FromTimeSpan(newBreakDuration)));
+                var allowedBreakDuration = await _workTimeContext.BreakDurations.Where(w => w.Valid == true).Select(s => s.Duration).FirstAsync();
+                if (newBreakDuration > TimeSpan.FromMinutes(allowedBreakDuration))
+                {
+                    var exceededBreakDuration = newBreakDuration - TimeSpan.FromMinutes(allowedBreakDuration);
+                    await _workTimeContext.WorkTimes.Where(w => w.Id == workId)
+                        .ExecuteUpdateAsync(update =>
+                            update.SetProperty(u => u.BreakOverAllowedTime, TimeOnly.FromTimeSpan(exceededBreakDuration)));
+                }
+                else
+                {
+                    await _workTimeContext.WorkTimes.Where(w => w.Id == workId)
+                        .ExecuteUpdateAsync(update => update.SetProperty(u => u.BreakOverAllowedTime, TimeOnly.FromTimeSpan(TimeSpan.FromMinutes(0))));
+                }
+                
             }
             else
             {
                 await _workTimeContext.WorkTimes.Where(w => w.Id == workId)
-                    .ExecuteUpdateAsync(update => update.SetProperty(u => u.BreakOverAllowedTime, TimeOnly.FromTimeSpan(TimeSpan.FromMinutes(0))));
+                    .ExecuteUpdateAsync(update => update.SetProperty(u => u.BreakDuration, (TimeOnly?)(null)));
+                await _workTimeContext.WorkTimes.Where(w => w.Id == workId)
+                    .ExecuteUpdateAsync(update => update.SetProperty(u => u.BreakOverAllowedTime, (TimeOnly?)(null)));
             }
-            await _workTimeContext.WorkTimes.Where(w => w.Id == workId)
-                .ExecuteUpdateAsync(update => update.SetProperty(u => u.BreakDuration, TimeOnly.FromTimeSpan(newBreakDuration))
-                    .SetProperty(u => u.TotalWorkTime, TimeOnly.FromTimeSpan(newTotalWorkTime).ToString("hh\\:mm\\:ss")));
-            
+            if (clockInTime != "/" && clockOutTime != "/")
+            {
+                var newWorkTime = (DateTime.Parse(clockOutTime) - DateTime.Parse(clockInTime));
+                await _workTimeContext.WorkTimes.Where(w => w.Id == workId)
+                    .ExecuteUpdateAsync(update => update.SetProperty(u => u.TotalWorkTime, newWorkTime.ToString("hh\\:mm\\:ss")));
+            }
+            else
+            {
+                await _workTimeContext.WorkTimes.Where(w => w.Id == workId)
+                    .ExecuteUpdateAsync(update => update.SetProperty(u => u.TotalWorkTime, (String?)(null)));
+            }
             return Ok();
         }
 

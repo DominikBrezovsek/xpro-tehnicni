@@ -36,7 +36,7 @@ namespace xproAPI.Migrations
 
                     b.HasKey("AbsenceId");
 
-                    b.ToTable("Absences");
+                    b.ToTable("Absences", (string)null);
                 });
 
             modelBuilder.Entity("xproAPI.Models.BreakDuration", b =>
@@ -55,7 +55,7 @@ namespace xproAPI.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("BreakDurations");
+                    b.ToTable("BreakDurations", (string)null);
                 });
 
             modelBuilder.Entity("xproAPI.Models.User", b =>
@@ -113,7 +113,7 @@ namespace xproAPI.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Users");
+                    b.ToTable("Users", (string)null);
                 });
 
             modelBuilder.Entity("xproAPI.Models.WorkTime", b =>
@@ -175,7 +175,7 @@ namespace xproAPI.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("WorkTimes");
+                    b.ToTable("WorkTimes", (string)null);
                 });
 
             modelBuilder.Entity("xproAPI.Models.WorkTime", b =>
