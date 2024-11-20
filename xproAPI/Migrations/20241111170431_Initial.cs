@@ -27,7 +27,7 @@ namespace xproAPI.Migrations
                     OtherEmploymentType = table.Column<string>(type: "text", nullable: true),
                     Username = table.Column<string>(type: "text", nullable: false),
                     Password = table.Column<string>(type: "text", nullable: false),
-                    ProfileImage = table.Column<string>(type: "text", nullable: true),
+                    ProfileImage = table.Column<byte[]>(type: "bytea", nullable: true),
                     Active = table.Column<bool>(type: "boolean", nullable: false)
                 },
                 constraints: table =>

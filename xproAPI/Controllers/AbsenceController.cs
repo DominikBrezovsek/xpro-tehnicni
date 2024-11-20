@@ -16,30 +16,41 @@ namespace xproAPI.Controllers
             _dataBaseContext = dataBaseContext;
         }
 
-        [HttpPost("Create")]
-        public async Task<ActionResult<Absence>> Create([FromBody] Absence absence)
+        [HttpGet("getAbsences/")]
+        public async Task<ActionResult<IEnumerable<Absence>>> GetAbsences()
         {
+            return await _dataBaseContext.Absences.ToListAsync();
+        }
+
+    [HttpPost("createAbsence/")]
+        public async Task<ActionResult<Absence>> Create([FromForm] string absenceName)
+        {
+            Absence absence = new Absence()
+            {
+                AbsenceName = absenceName
+            };
             _dataBaseContext.Absences.Add(absence);
             await _dataBaseContext.SaveChangesAsync();
             return Ok(absence);
         }
 
-        [HttpPost("Update")]
-        public async Task<ActionResult<Absence>> Update([FromBody] Absence absence)
+        [HttpPost("updateAbsence/")]
+        public async Task<ActionResult<Absence>> Update([FromForm] string absenceName, [FromForm] long absenceId)
         {
-            _dataBaseContext.Absences.Update(absence);
+            await _dataBaseContext.Absences.Where(w => w.AbsenceId == absenceId).ExecuteUpdateAsync(update =>
+                update.SetProperty(u => u.AbsenceName, absenceName));
             await _dataBaseContext.SaveChangesAsync();
-            return Ok(absence);
+            return Ok();
         }
 
-        [HttpPost("Delete")]
-        public async Task<ActionResult<Absence>> Delete([FromBody] long id)
+        [HttpPost("deleteAbsence/")]
+        public async Task<ActionResult<Absence>> Delete([FromForm] long absenceId)
         {
-            if ( await _dataBaseContext.Absences.FindAsync(id) == null)
+            if ( await _dataBaseContext.Absences.FindAsync(absenceId) == null)
             {
                 return NotFound();
             }
-            await _dataBaseContext.Absences.Where(w => w.AbsenceId == id).ExecuteDeleteAsync();
+            await _dataBaseContext.Absences.Where(w => w.AbsenceId == absenceId).ExecuteDeleteAsync();
             return Ok();
         }
         

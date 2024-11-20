@@ -1,15 +1,8 @@
-using System.Runtime.InteropServices.JavaScript;
-using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using xproAPI.Models;
-using BCrypt.Net;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Newtonsoft.Json;
-using NuGet.Common;
-using NuGet.Protocol;
-
 namespace xproAPI.Controllers;
 
 [Route("api/[controller]")]
@@ -24,7 +17,7 @@ public class UserController : ControllerBase
     }
 
     // Get all users 
-    [HttpGet, Authorize]
+    [HttpGet("getAllUsers/"), Authorize]
     public async Task<ActionResult<IEnumerable<User>>> GetUsers()
     {
         if (_dataBaseContext.Users == null) return NotFound();
@@ -42,14 +35,24 @@ public class UserController : ControllerBase
         return user;
     }
 
-    [HttpPost]
+    [HttpPost("createUser/")]
+    [Authorize]
     public async Task<ActionResult<User>> PostUser([FromForm] string name, [FromForm] string surname,
         [FromForm] string email, [FromForm] string phone, [FromForm] string position, [FromForm] string empType,
-        [FromForm] string username, [FromForm] string password, [FromForm] string empNote = "",
-        [FromForm] string profileImage = "", [FromForm] string role="user")
+        [FromForm] string username, [FromForm] string password, [FromForm] bool active,  [FromForm] string empNote = "",
+        [FromForm] string role="user")
     {
-        
-        
+        var usernameExists = await _dataBaseContext.Users.AnyAsync(a => a.Username == username);
+        var emailExists = await _dataBaseContext.Users.AnyAsync(a => a.Email == email);
+
+        if (usernameExists)
+        {
+            return Ok(new { error = "usernameExists" });
+        }   
+        if (emailExists)
+        {
+            return Ok(new { error = "emailExists" });
+        }
         User user = new User()
         {
             Name = name,
@@ -62,7 +65,7 @@ public class UserController : ControllerBase
             OtherEmploymentType = empNote,
             Username = username,
             Password = BCrypt.Net.BCrypt.EnhancedHashPassword(password),
-            Active = true,
+            Active = active,
             
         };
         if (!ModelState.IsValid)
@@ -74,23 +77,19 @@ public class UserController : ControllerBase
         return CreatedAtAction(nameof(GetUser), new { user.Id }, user);
     }
 
-    [HttpPut("{Id:long}")]
-    public async Task<ActionResult<User>> PutUser(long Id, User user)
+    [HttpPost("updateUser/")]
+    [Authorize]
+    public async Task<ActionResult<User>> PutUser([FromForm] long userId, [FromForm] string name, [FromForm] string surname,
+        [FromForm] string email, [FromForm] string phone, [FromForm] string active)
     {
-        if (Id != user.Id) return BadRequest();
-        _dataBaseContext.Entry(user).State = EntityState.Modified;
-        try
-        {
-            await _dataBaseContext.SaveChangesAsync();
-        }
-        catch (DbUpdateConcurrencyException)
-        {
-            if (!UserExists(Id)) return NotFound();
-
-            throw;
-        }
-
-        return NoContent();
+        bool userIsActive = active == "Aktiven";
+        await _dataBaseContext.Users.Where(w => w.Id == userId).ExecuteUpdateAsync(update =>
+            update.SetProperty(u => u.Name, name)
+                .SetProperty(u => u.Surname, surname)
+                .SetProperty(u => u.Email, email)
+                .SetProperty(u => u.Phone, phone)
+                .SetProperty(u => u.Active, userIsActive));
+        return Ok(new {success = true});
     }
 
     private bool UserExists(long Id)
@@ -98,14 +97,15 @@ public class UserController : ControllerBase
         return (_dataBaseContext.Users?.Any(e => e.Id == Id)).GetValueOrDefault();
     }
 
-    [HttpDelete("{Id:long}")]
-    public async Task<ActionResult<User>> DeleteUser(long Id)
+    [HttpPost("deleteUser/")]
+    [Authorize]
+    public async Task<ActionResult<User>> DeleteUser([FromForm]long userId)
     {
-        var user = await _dataBaseContext.Users.FindAsync(Id);
+        var user = await _dataBaseContext.Users.FindAsync(userId);
         if (user == null) return NotFound();
         _dataBaseContext.Users.Remove(user);
         await _dataBaseContext.SaveChangesAsync();
-        return Ok();
+        return Ok(new {success = true});
     }
 
     [HttpPost("login/")]
@@ -140,5 +140,39 @@ public class UserController : ControllerBase
             token = token
         };
         return Ok(response);
+    }
+
+    [HttpPost("setProfilePicture/")]
+    [Authorize]
+
+    public async Task<ActionResult> SetProfilePicture([FromForm] long userId, [FromForm] IFormFile image)
+    {
+        using var memoryStream = new MemoryStream();
+        await image.CopyToAsync(memoryStream);
+
+        if (memoryStream.Length < 2097152)
+        {
+            await _dataBaseContext.Users.Where(w => w.Id == userId).ExecuteUpdateAsync(update =>
+                update.SetProperty(u => u.ProfileImage, memoryStream.ToArray()));
+            return Ok(new { success = true });
+        } 
+        return Ok(new { error = "tooLarge" });
+    }
+
+    [HttpPost("setNewPassword/")]
+    [Authorize]
+    public async Task<ActionResult> SetNewPassword([FromForm] long userId,[FromForm] string currentPass , [FromForm] string newPass)
+    {
+        var curentPassHash = await _dataBaseContext.Users.Where(w => w.Id == userId).Select(s => s.Password).FirstAsync();
+        if (!BCrypt.Net.BCrypt.EnhancedVerify(currentPass, curentPassHash))
+        {
+            return Ok(new { error = "wrongCurrentPass" });
+        }
+        var hash = BCrypt.Net.BCrypt.EnhancedHashPassword(newPass);
+
+        await _dataBaseContext.Users
+            .Where(w=> w.Id == userId)
+            .ExecuteUpdateAsync(update => update.SetProperty(u => u.Password, hash));
+        return Ok();
     }
 }
