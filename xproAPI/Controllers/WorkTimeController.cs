@@ -116,16 +116,12 @@ namespace xproAPI.Controllers
                     update => update.SetProperty(u => u.ClockOut, TimeOnly.FromDateTime(clockOutTimeDt)));
             TimeSpan totalTime;
             TimeOnly clockOut = TimeOnly.FromDateTime(clockOutTimeDt);
-            if (clockIn.HasValue && clockIn != null)
-            {
-                totalTime = (TimeSpan)(clockIn - clockIn);
+            totalTime = (TimeSpan)(clockOut - clockIn);
 
                 await _workTimeContext.WorkTimes.Where(w => w.Id == workId)
                     .ExecuteUpdateAsync(update =>
                         update.SetProperty(u => u.TotalWorkTime, totalTime.ToString("hh\\:mm\\:ss")));
                 return Ok(totalTime);
-            }
-            return Ok("Napaka pri totalTime");
         }
         
         [HttpPost("addBreak/")]
@@ -322,12 +318,14 @@ namespace xproAPI.Controllers
                 return Ok(json);
             }
             var allowedBreakId = await _workTimeContext.BreakDurations.Where(w => w.Valid == true).Select(s => s.Id).FirstAsync();
+            var absenceName = await _workTimeContext.Absences.Where(w => w.AbsenceId == absenceId)
+                .Select(s => s.AbsenceName).FirstAsync();
             var worktime = new WorkTime()
             {
                 UserId = userId,
                 Date = date,
                 Absent = true,
-                AbsentType = absenceId,
+                AbsentType = absenceName,
                 BreakDurationId = allowedBreakId,
                 ClockIn = null,
             };

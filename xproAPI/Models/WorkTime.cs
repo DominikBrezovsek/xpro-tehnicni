@@ -15,7 +15,7 @@ public class WorkTime
     public TimeOnly? BreakDuration { get; set; }
     public TimeOnly? BreakOverAllowedTime { get; set; }
     public bool Absent { get; set; } = false;
-    public long? AbsentType { get; set; }
+    public string? AbsentType { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.Now;
     public DateTime UpdatedAt { get; set; } = DateTime.Now;
 }

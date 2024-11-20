@@ -42,8 +42,17 @@ public class UserController : ControllerBase
         [FromForm] string username, [FromForm] string password, [FromForm] bool active,  [FromForm] string empNote = "",
         [FromForm] string role="user")
     {
-        
-        
+        var usernameExists = await _dataBaseContext.Users.AnyAsync(a => a.Username == username);
+        var emailExists = await _dataBaseContext.Users.AnyAsync(a => a.Email == email);
+
+        if (usernameExists)
+        {
+            return Ok(new { error = "usernameExists" });
+        }   
+        if (emailExists)
+        {
+            return Ok(new { error = "emailExists" });
+        }
         User user = new User()
         {
             Name = name,
